@@ -1,6 +1,11 @@
 // script.js
 const apiKey = "0dd12d907e104ffb9e1195058251906";
 const loader = '<p style="color:white;">⏳ Loading...</p>';
+const allCities = [
+  "London", "New York", "Tokyo", "Lahore", "Paris", "Sydney", "Istanbul", "Moscow", "Berlin", "Toronto",
+  "Dubai", "Madrid", "Bangkok", "Rome", "Chicago", "Karachi", "Delhi", "Beijing", "Los Angeles", "San Francisco",
+  "Barcelona", "Amsterdam", "Seoul", "Cairo", "Jakarta"
+];
 
 async function getCityWeather(city) {
   const res = await fetch(`https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}`);
@@ -9,12 +14,7 @@ async function getCityWeather(city) {
 }
 
 async function loadMajorCities() {
-  const citiesList = [
-    "London", "New York", "Tokyo", "Lahore", "Paris",
-    "Sydney", "Istanbul", "Moscow", "Berlin", "Toronto",
-    "Dubai", "Madrid", "Bangkok", "Rome", "Chicago"
-  ];
-  const cities = shuffle(citiesList).slice(0, 5);
+  const cities = shuffle([...allCities]).slice(0, 5);
   let html = "";
   for (let city of cities) {
     html += `<p>${await getCityWeather(city)}</p>`;
@@ -57,20 +57,42 @@ async function getWeather() {
     document.body.style.transition = "background-image 1s ease-in-out";
   }
 
+  const html = `
+    <div style="background: rgba(0,0,0,0.6); padding: 1.5rem; border-radius: 12px; color: white; max-width: 500px; margin: auto; font-family: sans-serif; line-height: 1.6; box-shadow: 0 0 15px rgba(0,0,0,0.4);">
+      <h2 style="margin-bottom: 1rem;">🌍 ${data.location.name}, ${data.location.country}</h2>
+      <p><strong>🌡️ Temperature:</strong> ${data.current.temp_c}°C</p>
+      <p><strong>🌤️ Condition:</strong> ${data.current.condition.text}</p>
+      <p><strong>💧 Humidity:</strong> ${data.current.humidity}%</p>
+      <p><strong>🌬️ Feels Like:</strong> ${data.current.feelslike_c}°C</p>
+      <p><strong>🌫️ Air Quality Index (PM2.5):</strong> ${data.current.air_quality?.pm2_5?.toFixed(2) || 'N/A'}</p>
+      <p><strong>🕓 Last Updated:</strong> ${data.current.last_updated}</p>
+    </div>
+  `;
+
   setTimeout(() => {
-    result.innerHTML = `${data.location.name}: ${data.current.temp_c}°C, ${data.current.condition.text}`;
+    result.innerHTML = html;
   }, 500);
 }
 
-async function getHumidity() {
-  const city = document.getElementById("humidity-city").value;
-  const result = document.getElementById("humidity-result");
-  result.innerHTML = loader;
-  const res = await fetch(`https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}`);
-  const data = await res.json();
-  setTimeout(() => {
-    result.innerHTML = `${data.location.name}: Humidity is ${data.current.humidity}%`;
-  }, 500);
+function showSuggestions() {
+  const input = document.getElementById("weather-city").value.toLowerCase();
+  const suggestionBox = document.getElementById("city-suggestions");
+  suggestionBox.innerHTML = "";
+  if (!input) return;
+
+  const matches = allCities.filter(city => city.toLowerCase().startsWith(input));
+  if (matches.length > 0) {
+    suggestionBox.style.display = "block";
+    suggestionBox.innerHTML = matches.map(city => `<div onclick="selectSuggestion('${city}')" style="padding: 8px 12px; cursor: pointer; background: rgba(255,255,255,0.9); margin-bottom: 2px; border-radius: 6px; font-weight: bold;">${city}</div>`).join('');
+  } else {
+    suggestionBox.style.display = "none";
+  }
+}
+
+function selectSuggestion(city) {
+  document.getElementById("weather-city").value = city;
+  document.getElementById("city-suggestions").style.display = "none";
+  getWeather();
 }
 
 function formatDate(dateString) {
